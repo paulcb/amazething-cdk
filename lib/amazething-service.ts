@@ -17,6 +17,7 @@ export class AMazeThingService extends Construct {
     constructor(scope: Construct, id: string) {
         super(scope, id);
 
+        //TODO: double check that stack name is append to all resources
         const stackName = Stack.of(this).stackName.toLowerCase();
         const bucketName = `${stackName}-oacbucket`;
         const s3bucket = new Bucket(this, `${stackName}-Bucket`, {
@@ -27,6 +28,7 @@ export class AMazeThingService extends Construct {
             versioned: true,
         });
 
+        //TODO: figure out SDK v2 warning from cdk deploy.
         const nodeJsFunctionProps: NodejsFunctionProps = {
             bundling: {
                 externalModules: [
@@ -37,6 +39,8 @@ export class AMazeThingService extends Construct {
             timeout: Duration.minutes(3), // Default is 3 seconds
             memorySize: 256,
         };
+
+        //TODO: create local link for maze.ts
         const writeS3ObjFn = new NodejsFunction(this, `${stackName}-WriteS3`, {
             entry: path.join('./lib/lambda', 's3WriteMazes.ts'),
             ...nodeJsFunctionProps,
@@ -48,7 +52,10 @@ export class AMazeThingService extends Construct {
 
         s3bucket.grantWrite(writeS3ObjFn);
 
-
+        //TODO: clean bucket on redploy
+        //TODO: remove bucket on destroy
+        //TODO: make bucket sync with github repo?
+        //TODO: check that permission are best practice for static website
         new BucketDeployment(this, `${stackName}-DeployFiles`, {
             sources: [Source.asset('./../mazeapp/build')],
             destinationBucket: s3bucket,
@@ -65,6 +72,7 @@ export class AMazeThingService extends Construct {
             // geoRestriction: GeoRestriction.allowlist('US'),
         });
 
+        //TODO: AWS logs show that schedule doesn't occur actually at 0:0:0. Check why.
         const rule = new Rule(this, `${stackName}-ScheduleRule`, {
             schedule: Schedule.cron({ minute: '0', hour: '0' }),
         });
